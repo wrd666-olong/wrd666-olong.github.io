@@ -7,26 +7,26 @@
 <meta name="description" content="个人博客 - 记录技术与生活">
 <style>
   :root {
-    --bg: #fffafc;
-    --fg: #4a4453;
-    --muted: #8b8494;
-    --pink: #ff8ab8;
-    --accent: #f472b6;
+    --bg: #f4f8ff;
+    --fg: #334155;
+    --muted: #7a8ba6;
+    --accent: #3b82f6;
+    --accent2: #38bdf8;
     --card: #ffffff;
-    --border: #ffe3ef;
-    --shadow: 0 12px 30px rgba(244, 114, 182, .14);
-    --hero: linear-gradient(135deg, #ffe1ef 0%, #fff6fb 45%, #e9f1ff 100%);
+    --border: #dbeafe;
+    --shadow: 0 12px 30px rgba(59, 130, 246, .16);
+    --hero: linear-gradient(135deg, #dbeafe 0%, #f0f7ff 45%, #e0e7ff 100%);
   }
   [data-theme="dark"] {
-    --bg: #17141d;
-    --fg: #eae6f0;
-    --muted: #a49dae;
-    --pink: #ff9ec4;
-    --accent: #ff9ec4;
-    --card: #211c2a;
-    --border: #332b3e;
-    --shadow: 0 12px 30px rgba(0, 0, 0, .35);
-    --hero: linear-gradient(135deg, #2b1e30 0%, #17141d 45%, #1b2030 100%);
+    --bg: #0f172a;
+    --fg: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #60a5fa;
+    --accent2: #818cf8;
+    --card: #1e293b;
+    --border: #334155;
+    --shadow: 0 12px 30px rgba(0, 0, 0, .4);
+    --hero: linear-gradient(135deg, #1e293b 0%, #0f172a 45%, #1e1b4b 100%);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
@@ -75,7 +75,7 @@
     font-size: 2.4rem;
     font-weight: 800;
     letter-spacing: 2px;
-    background: linear-gradient(90deg, var(--accent), #b388ff, var(--accent));
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent));
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -113,7 +113,7 @@
     50% { transform: translateY(8px); opacity: 1; }
   }
 
-  /* 落樱 */
+  /* 飘落 */
   .petals { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
   .petal {
     position: absolute;
@@ -140,6 +140,53 @@
   /* ---------- 内容 ---------- */
   .container { max-width: 760px; margin: 0 auto; padding: 0 20px; }
   main { padding: 40px 0 20px; }
+
+  /* 个人信息卡片 */
+  .profile {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, .08);
+    margin-bottom: 32px;
+  }
+  .profile-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--border);
+    transition: transform .25s;
+  }
+  .profile:hover .profile-avatar { transform: rotate(-6deg) scale(1.05); }
+  .profile-info { flex: 1; min-width: 150px; }
+  .profile-name { font-size: 1.1rem; font-weight: 700; }
+  .profile-bio { color: var(--muted); font-size: .88rem; margin-top: 2px; }
+  .profile-stats { margin-top: 8px; font-size: .82rem; color: var(--muted); }
+  .profile-stats b { color: var(--accent); font-size: 1rem; margin-right: 2px; }
+  .profile-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-size: .85rem;
+    font-weight: 600;
+    transition: transform .2s, box-shadow .2s, background .2s;
+  }
+  .profile-link:hover {
+    transform: translateY(-2px);
+    background: var(--accent2);
+    box-shadow: 0 8px 18px rgba(59, 130, 246, .35);
+  }
+
   h2 {
     font-size: 1.25rem;
     margin-bottom: 20px;
@@ -152,7 +199,36 @@
     width: 4px;
     height: 1.1em;
     border-radius: 2px;
-    background: linear-gradient(var(--accent), #b388ff);
+    background: linear-gradient(var(--accent), var(--accent2));
+  }
+
+  /* 搜索 */
+  .search-wrap { position: relative; margin-bottom: 18px; }
+  .search-wrap input {
+    width: 100%;
+    padding: 12px 16px 12px 42px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--fg);
+    font-size: .92rem;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .search-wrap input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .2);
+  }
+  .search-wrap::before {
+    content: "🔍";
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: .85rem;
+    opacity: .7;
+    pointer-events: none;
   }
 
   .post-list { list-style: none; display: grid; gap: 14px; }
@@ -161,7 +237,7 @@
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 18px 20px;
-    box-shadow: 0 4px 14px rgba(244, 114, 182, .07);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, .07);
     transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
   }
   .post-list li:hover {
@@ -180,7 +256,7 @@
   .post-meta { color: var(--muted); font-size: .82rem; margin-top: 6px; }
   .tag {
     display: inline-block;
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    background: rgba(59, 130, 246, .12);
     color: var(--accent);
     border-radius: 999px;
     padding: 1px 10px;
@@ -246,6 +322,7 @@
   @media (max-width: 480px) {
     .site-title { font-size: 1.8rem; }
     .avatar { width: 84px; height: 84px; }
+    .profile-link { width: 100%; justify-content: center; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -260,7 +337,7 @@
 <header class="hero">
   <div class="petals" id="petals" aria-hidden="true"></div>
   <div class="hero-inner">
-    <img class="avatar" id="avatar" alt="avatar">
+    <img class="avatar js-avatar" alt="avatar">
     <h1 class="site-title">我的博客</h1>
     <p class="site-sub"><span id="typed"></span><span class="cursor"></span></p>
     <a class="scroll-down" href="#posts" aria-label="向下滚动">⌄</a>
@@ -272,7 +349,23 @@
 
 <main id="posts">
   <div class="container">
+
+    <section class="profile reveal">
+      <img class="profile-avatar js-avatar" alt="avatar">
+      <div class="profile-info">
+        <div class="profile-name">我的博客</div>
+        <div class="profile-bio">记录技术与生活</div>
+        <div class="profile-stats"><b id="docCount">0</b>篇文档 · 持续更新中</div>
+      </div>
+      <a class="profile-link" id="githubLink" href="#" target="_blank" rel="noopener">
+        <span>🐙</span> 查看 GitHub 主页
+      </a>
+    </section>
+
     <h2>文章与文档</h2>
+    <div class="search-wrap">
+      <input id="search" type="search" placeholder="搜索文档名称…" aria-label="搜索文档">
+    </div>
     <ul class="post-list" id="postList">
       <li class="reveal">
         <a class="post-title" href="posts/hello-world.html">Hello World</a>
@@ -291,6 +384,7 @@
       </li>
     </ul>
     <div class="empty" id="loading" hidden>正在加载文档列表…</div>
+    <div class="empty" id="noResult" hidden>没有匹配的文档</div>
     <p class="hint">
       把文件放进 <code>posts/</code> 或 <code>docs/</code> 目录并推送后会自动出现在这里
     </p>
@@ -325,18 +419,22 @@
 
   document.getElementById('year').textContent = new Date().getFullYear();
 
-  /* ---------- 头像（取自 GitHub） ---------- */
+  /* ---------- 用户信息（取自 GitHub） ---------- */
   var host = location.hostname;
-  var user = /\.github\.io$/.test(host) ? host.replace('.github\.io', '') : 'wrd666-olong';
-  var avatar = document.getElementById('avatar');
-  avatar.src = 'https://github.com/' + user + '.png?size=200';
-  avatar.onerror = function () {
-    this.onerror = null;
-    this.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">' +
-      '<rect width="200" height="200" fill="#ffd9e8"/>' +
-      '<text x="100" y="120" font-size="90" text-anchor="middle">🌸</text></svg>');
-  };
+  var user = /\.github\.io$/.test(host) ? host.replace(/\.github\.io$/, '') : 'wrd666-olong';
+
+  document.getElementById('githubLink').href = 'https://github.com/' + user;
+
+  document.querySelectorAll('.js-avatar').forEach(function (img) {
+    img.src = 'https://github.com/' + user + '.png?size=200';
+    img.onerror = function () {
+      this.onerror = null;
+      this.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">' +
+        '<rect width="200" height="200" fill="#dbeafe"/>' +
+        '<text x="100" y="130" font-size="100" text-anchor="middle">🐙</text></svg>');
+    };
+  });
 
   /* ---------- 打字机副标题 ---------- */
   (function () {
@@ -351,10 +449,10 @@
     })();
   })();
 
-  /* ---------- 落樱 ---------- */
+  /* ---------- 飘落雪花 ---------- */
   (function () {
     var box = document.getElementById('petals');
-    var chars = ['🌸', '🌷', '❀', '✿'];
+    var chars = ['❄️', '✦', '❄', '✧'];
     for (var i = 0; i < 10; i++) {
       var s = document.createElement('span');
       s.className = 'petal';
@@ -392,13 +490,36 @@
   }
   observeReveals();
 
+  /* ---------- 搜索筛选 ---------- */
+  var searchInput = document.getElementById('search');
+  var noResult = document.getElementById('noResult');
+  function applyFilter() {
+    var q = searchInput.value.trim().toLowerCase();
+    var items = document.querySelectorAll('#postList li');
+    var visible = 0;
+    items.forEach(function (li) {
+      var match = !q || li.textContent.toLowerCase().indexOf(q) !== -1;
+      li.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+    noResult.hidden = !(items.length > 0 && visible === 0);
+  }
+  searchInput.addEventListener('input', applyFilter);
+
+  function updateCount() {
+    document.getElementById('docCount').textContent =
+      document.querySelectorAll('#postList li').length;
+  }
+  updateCount();
+
   /* ---------- 自动列出 posts/ 与 docs/ ---------- */
   var REPO = /\.github\.io$/.test(host) ? user + '/' + host : 'wrd666-olong/wrd666-olong.github.io';
   var BRANCH = 'main';
   var DIRS = ['posts', 'docs'];
   var ICONS = { html: '🌐', htm: '🌐', md: '📝', pdf: '📄', txt: '📃',
                 png: '🖼️', jpg: '🖼️', jpeg: '🖼️', gif: '🖼️', svg: '🖼️',
-                zip: '🗜️', json: '🧩' };
+                zip: '🗜️', json: '🧩', doc: '📘', docx: '📘', xls: '📊',
+                xlsx: '📊', ppt: '📽️', pptx: '📽️' };
 
   function linkFor(path, name) {
     return /\.md$/i.test(name)
@@ -432,6 +553,8 @@
       list.appendChild(li);
     });
     observeReveals();
+    updateCount();
+    applyFilter();
   }
 
   (function loadDocs() {
