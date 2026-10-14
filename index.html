@@ -544,82 +544,69 @@
     applyFilter();
   }
 
-  var CACHE_KEY = 'docs-cache-v1';
-  var CACHE_TTL = 10 * 60 * 1000;
-
-  function readCache(allowStale) {
-    try {
-      var c = JSON.parse(localStorage.getItem(CACHE_KEY));
-      if (c && c.files && (allowStale || Date.now() - c.t < CACHE_TTL)) return c.files;
-    } catch (e) {}
-    return null;
+  function fetchJson(url) {
+    return fetch(url).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
   }
-  function writeCache(files) {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), files: files }));
-    } catch (e) {}
+
+  function commitDate(path) {
+    return fetch('https://api.github.com/repos/' + REPO + '/commits?path=' +
+                 encodeURIComponent(path) + '&per_page=1&t=' + Date.now())
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (d) {
+        if (Array.isArray(d) && d[0] && d[0].commit) {
+          return d[0].commit.author.date || d[0].commit.committer.date;
+        }
+        return null;
+      })
+      .catch(function () { return null; });
   }
 
   (function loadDocs() {
     var loading = document.getElementById('loading');
-
-    var cached = readCache(false);
-    if (cached && cached.length) {
-      loading.hidden = true;
-      renderDocs(cached);
-      return;
-    }
-
     loading.hidden = false;
     loading.textContent = '正在加载文档列表…';
     loading.style.color = '';
 
-    var jobs = DIRS.map(function (dir) {
-      return fetch('https://api.github.com/repos/' + REPO + '/contents/' + dir +
-                   '?ref=' + BRANCH + '&t=' + Date.now())
-        .then(function (r) {
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.json();
-        });
-    });
-    Promise.all(jobs).then(function (results) {
+    var pIndex = fetchJson('./index.json?t=' + Date.now());
+    var pApi = Promise.all(DIRS.map(function (dir) {
+      return fetchJson('https://api.github.com/repos/' + REPO + '/contents/' + dir +
+                       '?ref=' + BRANCH + '&t=' + Date.now());
+    }));
+
+    Promise.all([pIndex, pApi]).then(function (res) {
+      var manifest = (res[0] && Array.isArray(res[0].files)) ? res[0].files : [];
+      var apiRes = res[1] || [];
+      var dateMap = {};
+      manifest.forEach(function (f) { dateMap[f.path] = f.date; });
+
       var files = [];
-      results.forEach(function (data, idx) {
-        if (!Array.isArray(data)) return;
-        data.forEach(function (f) {
-          if (f.type !== 'file' || f.name.charAt(0) === '.') return;
-          files.push({ name: f.name, path: f.path, dir: DIRS[idx] });
+      var apiOK = apiRes.some(function (a) { return Array.isArray(a); });
+      if (apiOK) {
+        apiRes.forEach(function (data, i) {
+          if (!Array.isArray(data)) return;
+          data.forEach(function (f) {
+            if (f.type !== 'file' || f.name.charAt(0) === '.') return;
+            files.push({ name: f.name, path: f.path, dir: DIRS[i], date: dateMap[f.path] || null });
+          });
         });
-      });
+      } else {
+        files = manifest.map(function (f) {
+          return { name: f.name, path: f.path, dir: f.dir, date: f.date };
+        });
+      }
+
       if (!files.length) {
         loading.textContent = '目录里还没有文件';
         return;
       }
-      var dateJobs = files.map(function (f) {
-        return fetch('https://api.github.com/repos/' + REPO + '/commits?path=' +
-                     encodeURIComponent(f.path) + '&per_page=1&t=' + Date.now())
-          .then(function (r) { return r.ok ? r.json() : []; })
-          .then(function (d) {
-            if (Array.isArray(d) && d[0] && d[0].commit) {
-              f.date = d[0].commit.author.date || d[0].commit.committer.date;
-            }
-          })
-          .catch(function () {});
-      });
-      Promise.all(dateJobs).then(function () {
-        writeCache(files);
+
+      var need = files.filter(function (f) { return !f.date; });
+      Promise.all(need.map(function (f) {
+        return commitDate(f.path).then(function (d) { if (d) f.date = d; });
+      })).then(function () {
         loading.hidden = true;
         renderDocs(files);
       });
-    }).catch(function (e) {
-      var stale = readCache(true);
-      if (stale && stale.length) {
-        loading.hidden = true;
-        renderDocs(stale);
-      } else {
-        loading.textContent = '暂时无法加载文档列表（可能是 GitHub 接口限流），请稍后刷新或换个网络。';
-        loading.style.color = '#e5484d';
-      }
     });
   })();
 </script>
