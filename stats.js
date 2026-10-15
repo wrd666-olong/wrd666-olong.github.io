@@ -13,11 +13,9 @@
     return h.toString(36);
   }
   var base = hash(location.pathname + location.search);
-  var viewKey = 'v-' + base;
-  var likeKey = 'l-' + base;
 
-  function hit(key, dir) {
-    return fetch(API + '/' + (dir || 'hit') + '/' + NS + '/' + key)
+  function hit(key) {
+    return fetch(API + '/hit/' + NS + '/' + key)
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; });
   }
@@ -29,34 +27,53 @@
   }
 
   if (viewCount) {
+    var vKey = 'v-' + base;
     var counted = false;
     try { counted = sessionStorage.getItem('v-' + base) === '1'; } catch (e) {}
     if (!counted) {
-      hit(viewKey).then(function (d) {
+      hit(vKey).then(function (d) {
         if (d && typeof d.value === 'number') viewCount.textContent = d.value;
-        else get(viewKey).then(function (v) { if (v !== null) viewCount.textContent = v; });
+        else get(vKey).then(function (v) { if (v !== null) viewCount.textContent = v; });
       });
       try { sessionStorage.setItem('v-' + base, '1'); } catch (e) {}
     } else {
-      get(viewKey).then(function (v) { if (v !== null) viewCount.textContent = v; });
+      get(vKey).then(function (v) { if (v !== null) viewCount.textContent = v; });
     }
   }
 
   if (likeCount || likeBtn) {
+    var hKey = 'lh-' + base;
+    var uKey = 'lu-' + base;
+    function total() {
+      return Promise.all([get(hKey), get(uKey)]).then(function (a) {
+        return Math.max(0, (a[0] || 0) - (a[1] || 0));
+      });
+    }
+    function show() { if (likeCount) total().then(function (n) { likeCount.textContent = n; }); }
+
     var liked = false;
-    try { liked = localStorage.getItem('l-' + base) === '1'; } catch (e) {}
+    try { liked = localStorage.getItem('lk2-' + base) === '1'; } catch (e) {}
     function sync() { if (likeBtn) likeBtn.classList.toggle('active', liked); }
-    if (likeCount) get(likeKey).then(function (v) { if (v !== null) likeCount.textContent = v; });
     sync();
+    show();
+
     if (likeBtn) {
       likeBtn.addEventListener('click', function () {
-        hit(likeKey, liked ? 'decrement' : 'hit').then(function (d) {
-          liked = !liked;
-          try { localStorage.setItem('l-' + base, liked ? '1' : '0'); } catch (e) {}
-          sync();
-          if (d && typeof d.value === 'number') likeCount.textContent = d.value;
-          else get(likeKey).then(function (v) { if (v !== null) likeCount.textContent = v; });
-        });
+        if (liked) {
+          hit(uKey).then(function () {
+            liked = false;
+            try { localStorage.setItem('lk2-' + base, '0'); } catch (e) {}
+            sync();
+            show();
+          });
+        } else {
+          hit(hKey).then(function () {
+            liked = true;
+            try { localStorage.setItem('lk2-' + base, '1'); } catch (e) {}
+            sync();
+            show();
+          });
+        }
       });
     }
   }
