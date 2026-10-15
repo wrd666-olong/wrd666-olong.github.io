@@ -518,8 +518,7 @@
       var a = document.createElement('a');
       a.className = 'post-title';
       a.href = linkFor(f.path, f.name);
-      a.target = '_blank';
-      a.rel = 'noopener';
+      a.target = '_self';
       a.textContent = (ICONS[ext] ? ICONS[ext] + ' ' : '') + f.name.replace(/\.[^.]+$/, '');
       var tag = document.createElement('span');
       tag.className = 'tag';
