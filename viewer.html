@@ -79,13 +79,6 @@
   .theme-btn:hover { color: var(--accent); border-color: var(--accent); transform: scale(1.08); }
   .stats { display: inline-flex; align-items: center; gap: 12px; font-size: .82rem; color: var(--muted); }
   .stat { display: inline-flex; align-items: center; gap: 4px; }
-  .like-btn {
-    background: none; border: none; padding: 0;
-    color: var(--muted); font: inherit; cursor: pointer;
-    transition: color .2s, transform .2s;
-  }
-  .like-btn:hover { color: #e5484d; transform: scale(1.1); }
-  .like-btn.active { color: #e5484d; }
   .wrap { max-width: 820px; margin: 0 auto; padding: 32px 20px 60px; }
   .status {
     color: var(--muted);
@@ -143,7 +136,6 @@
   <span class="doc-title" id="docTitle">文档查看</span>
   <span class="stats">
     <span class="stat" title="浏览次数">👁 <span id="viewCount">–</span></span>
-    <button class="stat like-btn" id="likeBtn" type="button" title="点赞">❤ <span id="likeCount">–</span></button>
   </span>
   <button class="theme-btn" id="themeBtn" type="button" title="切换主题">🌙</button>
 </div>
@@ -268,6 +260,6 @@
     }
   })();
 </script>
-<script src="/stats.js?v=2"></script>
+<script src="/stats.js?v=3"></script>
 </body>
 </html>
