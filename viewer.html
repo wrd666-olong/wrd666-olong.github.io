@@ -254,6 +254,14 @@
         });
     }
   })();
+  document.querySelectorAll('.back').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      if (document.referrer && document.referrer.indexOf(location.origin) === 0) {
+        e.preventDefault();
+        history.back();
+      }
+    });
+  });
 </script>
 </body>
 </html>

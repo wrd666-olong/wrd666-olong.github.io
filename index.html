@@ -450,6 +450,16 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
+  /* ---------- 向下箭头：平滑滚动但不改 URL（避免多出历史记录） ---------- */
+  var scrollDown = document.querySelector('.scroll-down');
+  if (scrollDown) {
+    scrollDown.addEventListener('click', function (e) {
+      e.preventDefault();
+      var el = document.getElementById('posts');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
   /* ---------- 滚动出现 ---------- */
   var observer = new IntersectionObserver(function (entries) {
     entries.forEach(function (e) {

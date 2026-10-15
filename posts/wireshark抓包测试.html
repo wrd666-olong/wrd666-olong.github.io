@@ -171,6 +171,14 @@
   document.querySelectorAll('article img').forEach(function (img) {
     img.addEventListener('click', function () { window.open(img.src, '_blank'); });
   });
+  document.querySelectorAll('.back').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      if (document.referrer && document.referrer.indexOf(location.origin) === 0) {
+        e.preventDefault();
+        history.back();
+      }
+    });
+  });
 </script>
 </body>
 </html>
