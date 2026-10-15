@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -77,8 +77,6 @@
     transition: color .2s, border-color .2s, transform .2s;
   }
   .theme-btn:hover { color: var(--accent); border-color: var(--accent); transform: scale(1.08); }
-  .stats { display: inline-flex; align-items: center; gap: 12px; font-size: .82rem; color: var(--muted); }
-  .stat { display: inline-flex; align-items: center; gap: 4px; }
   .wrap { max-width: 820px; margin: 0 auto; padding: 32px 20px 60px; }
   .status {
     color: var(--muted);
@@ -134,9 +132,6 @@
 <div class="topbar">
   <a class="back" href="/">← 返回主页</a>
   <span class="doc-title" id="docTitle">文档查看</span>
-  <span class="stats">
-    <span class="stat" title="浏览次数">👁 <span id="viewCount">–</span></span>
-  </span>
   <button class="theme-btn" id="themeBtn" type="button" title="切换主题">🌙</button>
 </div>
 
@@ -218,9 +213,11 @@
         if (!r.ok) throw new Error('找不到文件（HTTP ' + r.status + '）');
         return r;
       })
-      .then(function (r) { return r.arrayBuffer(); })
-      .then(function (buf) {
-        var data = ext === 'docx' ? buf : new TextDecoder('utf-8').decode(buf);
+      .then(function (r) {
+        if (ext === 'docx') return r.arrayBuffer();
+        return r.text();
+      })
+      .then(function (data) {
         if (ext === 'docx') return renderDocx(data);
         if (ext === 'md' || ext === 'markdown') return renderMd(data);
         if (ext === 'txt' || ext === 'json' || ext === 'log' || ext === 'csv') return renderText(data);
@@ -258,6 +255,5 @@
     }
   })();
 </script>
-<script src="/stats.js?v=3"></script>
 </body>
 </html>
