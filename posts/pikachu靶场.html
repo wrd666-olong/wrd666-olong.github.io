@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pikachu 靶场笔记 - olong的博客</title>
+<style>
+  :root {
+    --bg: #f4f8ff; --fg: #334155; --muted: #7a8ba6; --accent: #3b82f6;
+    --accent2: #38bdf8; --card: #ffffff; --border: #dbeafe;
+    --shadow: 0 12px 30px rgba(59, 130, 246, .16);
+  }
+  [data-theme="dark"] {
+    --bg: #0f172a; --fg: #e2e8f0; --muted: #94a3b8; --accent: #60a5fa;
+    --accent2: #818cf8; --card: #1e293b; --border: #334155;
+    --shadow: 0 12px 30px rgba(0, 0, 0, .4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    line-height: 1.85; transition: background .3s, color .3s;
+  }
+  .topbar {
+    position: sticky; top: 0; z-index: 10; display: flex; align-items: center;
+    gap: 12px; padding: 14px 20px; background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  .back { color: var(--accent); text-decoration: none; font-size: .9rem; font-weight: 600; transition: transform .2s; }
+  .back:hover { transform: translateX(-3px); }
+  .theme-btn {
+    margin-left: auto; width: 38px; height: 38px; border-radius: 50%;
+    border: 1px solid var(--border); background: var(--bg); color: var(--fg);
+    cursor: pointer; font-size: .95rem; transition: color .2s, border-color .2s, transform .2s;
+  }
+  .theme-btn:hover { color: var(--accent); border-color: var(--accent); transform: scale(1.08); }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 40px 20px 60px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 36px; box-shadow: var(--shadow);
+  }
+  h1 {
+    font-size: 1.7rem; margin-bottom: 10px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .meta { color: var(--muted); font-size: .85rem; margin-bottom: 18px; }
+  .intro { color: var(--muted); font-size: .94rem; margin-bottom: 10px; }
+  .hint { color: var(--muted); font-size: .82rem; margin: 14px 0 4px; }
+  p { margin: .7em 0; }
+  ul, ol { margin: .5em 0 .8em 1.4em; }
+  li { margin: .3em 0; }
+  strong { color: var(--fg); }
+  code { background: var(--bg); border: 1px solid var(--border); border-radius: 5px;
+    padding: 1px 6px; color: var(--accent); font-family: "SFMono-Regular", Consolas, monospace; font-size: .86em; }
+
+  /* 折叠模块 */
+  details { list-style: none; }
+  summary { list-style: none; cursor: pointer; user-select: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: "▸"; color: var(--accent); font-size: .9rem;
+    transition: transform .2s; display: inline-block; flex: 0 0 auto;
+  }
+  details[open] > summary::before { transform: rotate(90deg); }
+
+  .module {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    margin: 16px 0; overflow: hidden; box-shadow: 0 4px 14px rgba(59,130,246,.06);
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .module[open] { border-color: var(--accent); box-shadow: var(--shadow); }
+  .module > summary {
+    display: flex; align-items: center; gap: 10px; padding: 16px 18px;
+    font-size: 1.08rem; font-weight: 700; transition: background .2s, color .2s;
+  }
+  .module > summary:hover { background: rgba(59,130,246,.06); }
+  .module[open] > summary { color: var(--accent); background: rgba(59,130,246,.08); }
+  .badge {
+    margin-left: auto; font-size: .72rem; font-weight: 500; color: var(--muted);
+    background: var(--bg); border: 1px solid var(--border); border-radius: 999px;
+    padding: 1px 10px;
+  }
+  .module-body { padding: 2px 16px 16px; }
+  .module-desc { color: var(--muted); font-size: .92rem; margin: 4px 0 10px; }
+
+  .topic {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    margin: 10px 0; overflow: hidden; transition: border-color .2s;
+  }
+  .topic[open] { border-color: var(--accent); }
+  .topic > summary {
+    display: flex; align-items: center; gap: 8px; padding: 12px 14px;
+    font-size: .98rem; font-weight: 600; transition: background .2s, color .2s;
+  }
+  .topic > summary:hover { background: rgba(59,130,246,.06); }
+  .topic[open] > summary { color: var(--accent); }
+  .topic-body { padding: 2px 16px 16px; font-size: .94rem; }
+
+  details[open] > .module-body,
+  details[open] > .topic-body { animation: slideDown .25s ease; }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  img {
+    display: block; max-width: 100%; height: auto; margin: 10px 0;
+    border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(59,130,246,.12); cursor: zoom-in;
+  }
+  .note {
+    background: rgba(59,130,246,.1); border-left: 4px solid var(--accent);
+    border-radius: 8px; padding: 8px 12px; margin: 10px 0;
+    font-size: .88rem; color: var(--muted);
+  }
+  @media (max-width: 480px) {
+    .card { padding: 20px; }
+    h1 { font-size: 1.4rem; }
+    .module > summary { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="back" href="/">← 返回主页</a>
+  <button class="theme-btn" id="themeBtn" type="button" title="切换主题">🌙</button>
+</div>
+
+<main class="wrap">
+  <article class="card">
+    <h1>Pikachu 靶场笔记</h1>
+    <div class="meta">2026-10-24 · 靶场练习</div>
+    <p class="intro">Pikachu 是一个开源的 Web 漏洞练习靶场，内置暴力破解、XSS、SQL 注入等多种常见漏洞场景。本页按模块整理练习过程与原理。</p>
+    <p class="hint">👇 点击模块展开子题目，点击子题目查看详解。</p>
+
+    <details class="module">
+      <summary><span>爆破模块</span><span class="badge">4 个题目</span></summary>
+      <div class="module-body">
+        <p class="module-desc">“暴力破解”是一种常见的 Web 攻击手段：使用大量认证信息在认证接口反复尝试登录，直到得到正确结果。为提高效率，一般会配合带字典的工具进行自动化操作。</p>
+
+        <details class="topic">
+          <summary><span>1. 基于表单的暴力破解</span></summary>
+          <div class="topic-body">
+            <p>这个比较简单，直接用一个“集束炸弹”攻击，同时爆破用户名和密码。</p>
+            <img src="../drafts/pikachu/爆破模块截图/1.png" alt="基于表单的暴力破解" loading="lazy">
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>2. 验证码绕过（on server）</span></summary>
+          <div class="topic-body">
+            <p><strong>总原理：</strong>验证码由服务端生成，答案存在 Session 里，登录时服务端逐一比对——比对这一步无法跳过。所以绕的不是“校验”，而是“校验机制里的缺陷”：验证码的生成 / 刷新 / 绑定机制不严，或验证码本身能被机器识别。</p>
+            <p><strong>攻击方法：</strong>开启 Burp 拦截时可以发现验证码会存储在 <code>bf[vcode]</code> 中。</p>
+            <img src="../drafts/pikachu/爆破模块截图/2.png" alt="验证码存储在 bf[vcode]" loading="lazy">
+            <p>当我们没有放行 GET 包时会发现一个神奇的事情：验证码不会销毁和重新创建。</p>
+            <img src="../drafts/pikachu/爆破模块截图/3.png" alt="验证码未销毁" loading="lazy">
+            <p><strong>一句话原理：</strong>Pikachu 这个页面的验证码只在“加载页面（GET）”时生成一次并存入 Session，而登录提交（POST）校验通过后没有销毁、也没有重新生成 <code>$_SESSION['vcode']</code>。所以只要你的 Cookie（PHPSESSID）不变、不再刷新页面，Session 里的验证码永远是同一个值——重放多少次都校验通过。</p>
+            <div class="note">因此只要拦截掉 GET 请求包然后进行爆破攻击，验证码就一直有效。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>3. 验证码绕过（on client）</span></summary>
+          <div class="topic-body">
+            <p>这个比较简单：客户端验证码校验是通过 JS 代码实现的，因此只要在设置中禁用 JS，就可以不要验证码直接爆破。</p>
+            <img src="../drafts/pikachu/爆破模块截图/4.png" alt="客户端验证码绕过" loading="lazy">
+            <div class="note">注意：F12 调试要一直开启，关闭 JS 后重新启用会恢复验证码校验。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>4. Token 防爆破</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong></p>
+            <ol>
+              <li>GET 页面 → 生成 token「a1b2」存入 Session，嵌入隐藏字段；</li>
+              <li>POST 提交 token=a1b2 → 比对通过 → 立即销毁并生成「c3d4」；</li>
+              <li>固定 a1b2 重放 → Session 已是 c3d4 → 拒绝 ✘。</li>
+            </ol>
+            <p><strong>解决方法：</strong></p>
+            <ul>
+              <li>写脚本循环（Python + requests）：<code>session.get()</code> 解析出新 token → <code>session.post()</code> 提交一组账号密码 → 再 GET 取新 token……每次请求都带最新 token。</li>
+              <li>或用 Burp 高级用法：Macro（会话处理规则）——在每次发送前自动先 GET 页面、正则提取 token、替换请求中的 token 参数。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="module">
+      <summary><span>XSS 注入模块</span><span class="badge">开发中</span></summary>
+      <div class="module-body">
+        <p class="module-desc">该模块正在整理中，敬请期待。</p>
+      </div>
+    </details>
+
+  </article>
+</main>
+
+<script>
+  var root = document.documentElement;
+  var themeBtn = document.getElementById('themeBtn');
+  var saved = localStorage.getItem('theme');
+  if (saved) root.setAttribute('data-theme', saved);
+  function syncTheme() {
+    themeBtn.textContent = root.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+  }
+  syncTheme();
+  themeBtn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    syncTheme();
+  });
+
+  document.querySelectorAll('article img').forEach(function (img) {
+    img.addEventListener('click', function () { window.open(img.src, '_blank'); });
+  });
+
+  document.querySelectorAll('.back').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      if (document.referrer && document.referrer.indexOf(location.origin) === 0) {
+        e.preventDefault();
+        history.back();
+      }
+    });
+  });
+
+  document.querySelectorAll('details').forEach(function (d) {
+    d.addEventListener('toggle', function () {
+      if (!d.open) return;
+      var parent = d.parentElement;
+      if (!parent) return;
+      parent.querySelectorAll(':scope > details').forEach(function (sib) {
+        if (sib !== d) sib.open = false;
+      });
+    });
+  });
+</script>
+</body>
+</html>
