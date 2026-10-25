@@ -190,7 +190,7 @@
     </details>
 
     <details class="module">
-      <summary><span>XSS 注入模块</span><span class="badge">6 个题目</span></summary>
+      <summary><span>XSS 注入模块</span><span class="badge">9 个题目</span></summary>
       <div class="module-body">
         <p class="module-desc">XSS（跨站脚本攻击，Cross-Site Scripting）是指攻击者把恶意脚本注入到页面中，其他用户浏览该页面时脚本被执行，从而窃取 Cookie、劫持会话或进行钓鱼等。Pikachu 的 XSS 模块包含反射型、存储型、DOM 型以及过滤绕过等场景。（配图为演示示意图）</p>
 
@@ -247,13 +247,52 @@
         </details>
 
         <details class="topic">
-          <summary><span>6. 常见过滤与绕过</span></summary>
+          <summary><span>6. 绕过：htmlspecialchars 转义</span></summary>
           <div class="topic-body">
+            <p><strong>原理：</strong><code>htmlspecialchars()</code> 会把 <code>&lt; &gt; &amp; " '</code> 转成实体，直接闭合标签的写法会失效。</p>
+            <p><strong>思路：</strong></p>
             <ul>
-              <li><strong>htmlspecialchars 转义了 <code>&lt; &gt; &amp; " '</code>：</strong>寻找未转义的输出点，或利用属性内事件，如 <code>" onmouseover=alert(1) x="</code>。</li>
-              <li><strong>过滤了 script 关键字：</strong>换用 <code>&lt;img src=x onerror=alert(1)&gt;</code>、<code>&lt;svg onload=alert(1)&gt;</code>、<code>&lt;body onload=alert(1)&gt;</code>。</li>
-              <li><strong>输出到 href 属性：</strong>尝试 <code>javascript:alert(1)</code>。</li>
-              <li><strong>输出在 &lt;script&gt; 内：</strong>闭合引号/标签，如 <code>';alert(1)//</code>。</li>
+              <li>寻找没有经过该函数处理的输出点（换个参数/字段试试）；</li>
+              <li>若双引号未被转义且输出在属性内，可闭合属性并加事件：<code>" onmouseover=alert(1) x="</code>；</li>
+              <li>若只转义了尖括号，尝试事件属性、<code>javascript:</code> 等其它上下文。</li>
+            </ul>
+            <div class="note">不同输出位置（标签内、属性内、JS 内）绕法不同，先判断上下文。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>7. 绕过：关键字过滤（script 被禁）</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>后端用黑名单/正则过滤 <code>script</code>、<code>alert</code> 等关键字。</p>
+            <p><strong>换标签：</strong>用不需要 script 标签的事件来触发：</p>
+            <ul>
+              <li><code>&lt;img src=x onerror=alert(1)&gt;</code></li>
+              <li><code>&lt;svg onload=alert(1)&gt;</code></li>
+              <li><code>&lt;body onload=alert(1)&gt;</code></li>
+              <li><code>&lt;details open ontoggle=alert(1)&gt;</code></li>
+            </ul>
+            <p><strong>关键字变形：</strong>大小写 <code>ScRiPt</code>、双写 <code>scrscriptipt</code>（仅在只替换一次时有效）、HTML 实体/URL 编码等。</p>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>8. 绕过：输出到 href 属性</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>用户输入被拼进 <code>&lt;a href="..."&gt;</code>，可注入 <code>javascript:</code> 伪协议。</p>
+            <p><strong>payload：</strong><code>javascript:alert(1)</code></p>
+            <p><strong>变型：</strong>若过滤 <code>javascript</code>，尝试大小写、插入制表符/换行、HTML 实体等（视具体过滤而定）。</p>
+            <div class="note">这种需要受害者主动点击链接才会触发。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>9. 绕过：输出在 &lt;script&gt; 内</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>输入被放进 <code>&lt;script&gt;</code> 的 JS 字符串或 JSON 中，需要闭合引号/标签再执行。</p>
+            <ul>
+              <li>单引号字符串内：<code>';alert(1)//</code></li>
+              <li>双引号字符串内：<code>";alert(1)//</code></li>
+              <li>若 <code>&lt;/script&gt;</code> 未被转义：<code>&lt;/script&gt;&lt;script&gt;alert(1)&lt;/script&gt;</code></li>
             </ul>
             <div class="note">以上仅用于授权靶场与学习，请勿用于未授权的系统。</div>
           </div>
