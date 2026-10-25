@@ -190,9 +190,74 @@
     </details>
 
     <details class="module">
-      <summary><span>XSS 注入模块</span><span class="badge">开发中</span></summary>
+      <summary><span>XSS 注入模块</span><span class="badge">6 个题目</span></summary>
       <div class="module-body">
-        <p class="module-desc">该模块正在整理中，敬请期待。</p>
+        <p class="module-desc">XSS（跨站脚本攻击，Cross-Site Scripting）是指攻击者把恶意脚本注入到页面中，其他用户浏览该页面时脚本被执行，从而窃取 Cookie、劫持会话或进行钓鱼等。Pikachu 的 XSS 模块包含反射型、存储型、DOM 型以及过滤绕过等场景。（配图为演示示意图）</p>
+
+        <details class="topic">
+          <summary><span>1. 反射型 XSS（GET）</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>payload 作为 URL 参数传入，服务端未做过滤直接回显到页面，浏览器把回显内容当作 HTML 解析并执行脚本。</p>
+            <p><strong>测试：</strong>在输入框或 URL 的 <code>message</code> 参数里提交 <code>&lt;script&gt;alert(1)&lt;/script&gt;</code>，页面弹出 <code>1</code>。</p>
+            <img src="../drafts/pikachu/xss截图/xss-reflected.png" alt="反射型 XSS 演示" loading="lazy">
+            <div class="note">反射型属于「非持久型」，需要诱导受害者点击构造好的链接才会触发。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>2. 反射型 XSS（POST）</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>与 GET 型相同，只是 payload 放在 POST 表单数据里，服务端同样未过滤直接回显。</p>
+            <p><strong>测试：</strong>用 Burp 拦截登录/提交请求，把 <code>message</code> 改成 payload；或自建一个自动提交的表单页面提交给目标。</p>
+            <div class="note">POST 型不能直接发链接，通常配合 CSRF / 钓鱼页面诱导提交。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>3. 存储型 XSS</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>payload 被存入数据库（如留言板、评论、个人资料），每次有人访问该页面都会把内容读出并渲染，脚本随之执行。</p>
+            <p><strong>测试：</strong>在留言板提交 <code>&lt;img src=x onerror=alert(1)&gt;</code>，刷新页面仍会触发。</p>
+            <img src="../drafts/pikachu/xss截图/xss-stored.png" alt="存储型 XSS 演示" loading="lazy">
+            <div class="note">存储型持久生效、影响所有访问者，危害最大。测试后记得删除恶意留言。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>4. DOM 型 XSS</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>不经过服务端，前端 JS 从 <code>location.hash</code> / <code>location.search</code> 等取值后，用 <code>innerHTML</code>、<code>document.write</code> 写入 DOM，导致脚本执行。</p>
+            <p><strong>测试：</strong>在 URL 的 <code>#</code> 后注入 <code>&lt;img src=x onerror=alert(1)&gt;</code>，页面 JS 把它写进 DOM 就会触发。</p>
+            <img src="../drafts/pikachu/xss截图/xss-dom.png" alt="DOM 型 XSS 演示" loading="lazy">
+            <div class="note">DOM 型的 payload 不会出现在服务器响应里，抓包看不到，需要审计前端 JS 源码。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>5. XSS 盲打</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>payload 提交后不会立即在前台回显，而是在后台管理页面（如留言审核、日志查看）被触发。</p>
+            <p><strong>方法：</strong>使用 XSS 平台（Pikachu 自带 pkxss 后台）接收被触发后的 Cookie / 请求，判断是否存在盲打。</p>
+            <ol>
+              <li>在可输入处填入指向 XSS 平台的 payload；</li>
+              <li>等待管理员在后台查看该内容；</li>
+              <li>平台收到请求即说明盲打成功。</li>
+            </ol>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>6. 常见过滤与绕过</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>htmlspecialchars 转义了 <code>&lt; &gt; &amp; " '</code>：</strong>寻找未转义的输出点，或利用属性内事件，如 <code>" onmouseover=alert(1) x="</code>。</li>
+              <li><strong>过滤了 script 关键字：</strong>换用 <code>&lt;img src=x onerror=alert(1)&gt;</code>、<code>&lt;svg onload=alert(1)&gt;</code>、<code>&lt;body onload=alert(1)&gt;</code>。</li>
+              <li><strong>输出到 href 属性：</strong>尝试 <code>javascript:alert(1)</code>。</li>
+              <li><strong>输出在 &lt;script&gt; 内：</strong>闭合引号/标签，如 <code>';alert(1)//</code>。</li>
+            </ul>
+            <div class="note">以上仅用于授权靶场与学习，请勿用于未授权的系统。</div>
+          </div>
+        </details>
       </div>
     </details>
 
