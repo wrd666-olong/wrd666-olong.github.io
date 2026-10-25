@@ -247,21 +247,7 @@
         </details>
 
         <details class="topic">
-          <summary><span>6. 绕过：htmlspecialchars 转义</span></summary>
-          <div class="topic-body">
-            <p><strong>原理：</strong><code>htmlspecialchars()</code> 会把 <code>&lt; &gt; &amp; " '</code> 转成实体，直接闭合标签的写法会失效。</p>
-            <p><strong>思路：</strong></p>
-            <ul>
-              <li>寻找没有经过该函数处理的输出点（换个参数/字段试试）；</li>
-              <li>若双引号未被转义且输出在属性内，可闭合属性并加事件：<code>" onmouseover=alert(1) x="</code>；</li>
-              <li>若只转义了尖括号，尝试事件属性、<code>javascript:</code> 等其它上下文。</li>
-            </ul>
-            <div class="note">不同输出位置（标签内、属性内、JS 内）绕法不同，先判断上下文。</div>
-          </div>
-        </details>
-
-        <details class="topic">
-          <summary><span>7. 绕过：关键字过滤（script 被禁）</span></summary>
+          <summary><span>6. 绕过：关键字过滤（script 被禁）</span></summary>
           <div class="topic-body">
             <p><strong>原理：</strong>后端用黑名单/正则过滤 <code>script</code>、<code>alert</code> 等关键字。</p>
             <p><strong>换标签：</strong>用不需要 script 标签的事件来触发：</p>
@@ -272,6 +258,20 @@
               <li><code>&lt;details open ontoggle=alert(1)&gt;</code></li>
             </ul>
             <p><strong>关键字变形：</strong>大小写 <code>ScRiPt</code>、双写 <code>scrscriptipt</code>（仅在只替换一次时有效）、HTML 实体/URL 编码等。</p>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>7. 绕过：htmlspecialchars 转义</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong><code>htmlspecialchars()</code> 会把 <code>&lt; &gt; &amp; " '</code> 转成实体，直接闭合标签的写法会失效。</p>
+            <p><strong>思路：</strong></p>
+            <ul>
+              <li>寻找没有经过该函数处理的输出点（换个参数/字段试试）；</li>
+              <li>若双引号未被转义且输出在属性内，可闭合属性并加事件：<code>" onmouseover=alert(1) x="</code>；</li>
+              <li>若只转义了尖括号，尝试事件属性、<code>javascript:</code> 等其它上下文。</li>
+            </ul>
+            <div class="note">不同输出位置（标签内、属性内、JS 内）绕法不同，先判断上下文。</div>
           </div>
         </details>
 
