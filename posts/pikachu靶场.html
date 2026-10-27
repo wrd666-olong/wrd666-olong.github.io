@@ -58,6 +58,19 @@
     font-family: "SFMono-Regular", Consolas, monospace; font-size: .86em;
     white-space: nowrap;
   }
+  .code {
+    margin: 10px 0; border-radius: 10px; overflow: auto;
+    border: 1px solid var(--border); background: #0d1117;
+    -webkit-overflow-scrolling: touch;
+  }
+  .code pre {
+    margin: 0; padding: 13px 15px; font-size: .82rem; line-height: 1.6;
+    color: #e6edf3; font-family: "SFMono-Regular", Consolas, monospace;
+  }
+  .code code {
+    background: transparent; border: none; padding: 0; color: #e6edf3;
+    font-size: 1em; white-space: pre;
+  }
 
   /* 折叠模块 */
   details { list-style: none; }
@@ -339,6 +352,66 @@
               <li><strong>CSP：</strong>设置 <code>Content-Security-Policy</code>，限制脚本来源、禁用内联脚本。</li>
               <li><strong>Cookie 加固：</strong>设置 <code>HttpOnly</code>、<code>Secure</code>、<code>SameSite</code>，降低脚本窃取风险。</li>
               <li><strong>校验 DOM 输入：</strong>对 <code>location.hash</code>、<code>location.search</code> 等来源做校验与编码。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="module">
+      <summary><span>CSRF 模块</span><span class="badge">3 题 + 防护</span></summary>
+      <div class="module-body">
+        <p class="module-desc">CSRF（跨站请求伪造，Cross-Site Request Forgery）是指攻击者诱导已登录用户在不知情的情况下，以其身份向目标站点发送请求，从而执行修改资料、修改密码等敏感操作。核心是“借用受害者的登录态”。</p>
+
+        <details class="topic">
+          <summary><span>1. GET 型 CSRF</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>敏感操作的参数通过 GET 传递，攻击者构造一个带参数的链接，诱导已登录用户点击，即以其身份完成操作。</p>
+            <p><strong>测试：</strong>登录后修改个人信息并抓包，得到完整的 GET 请求 URL；把该 URL 发给受害者（或以短链、图片等形式诱导访问），对方打开后资料就被修改。</p>
+            <div class="code"><pre><code>http://10.47.250.38:8443/pikachu/vul/csrf/csrfget/csrf_get_edit.php?sex=woman&amp;phonenum=13676767767&amp;add=nba+76&amp;email=allen%40pikachu.com&amp;submit=submit</code></pre></div>
+            <img src="../drafts/pikachu/csrf截图/get型csrf.png" alt="GET 型 CSRF 恶意链接" loading="lazy">
+            <div class="note">GET 型利用门槛最低，链接可直接分享，或藏进图片 / 短链中。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>2. POST 型 CSRF</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>敏感操作通过 POST 提交，攻击者构造一个“自动提交”的 HTML 表单页面，诱导受害者访问该页面即自动提交请求。</p>
+            <p><strong>测试：</strong>用 Burp 的 <em>Engagement tools → Generate CSRF PoC</em> 生成表单 HTML，保存后在受害者浏览器中打开，脚本会自动提交。</p>
+            <img src="../drafts/pikachu/csrf截图/post.png" alt="Burp 生成 CSRF PoC" loading="lazy">
+            <div class="note">POST 型需要诱导受害者访问攻击者页面，不能只靠一个链接。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>3. CSRF Token</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>服务端在表单中加入一次性 token，提交时校验 token 与会话中的值是否一致，以区分“用户本人提交”和“第三方伪造请求”。</p>
+            <p><strong>源码分析：</strong></p>
+            <div class="code"><pre><code>if(isset($_GET['submit'])){
+    if($_GET['sex']!=null &amp;&amp; ... &amp;&amp; $_GET['token']==$_SESSION['token']){   // 第33行：先校验
+        update member ...
+    }
+}
+set_token();   // 第48行：校验“之后”才生成/刷新 token</code></pre></div>
+            <p>也就是说 token 只有在打开修改页面后才会生成 / 刷新。因此可以诱导受害者在“打开修改页面之前”点击恶意链接，从而绕过校验直接修改内容：</p>
+            <div class="code"><pre><code>http://127.0.0.1:8443/pikachu/vul/csrf/csrftoken/token_get_edit.php?sex=gay&amp;phonenum=18626545453&amp;add=chai&amp;email=vince%40pikachu.com&amp;submit=submit</code></pre></div>
+            <p>访问后即可看到资料被直接修改：</p>
+            <img src="../drafts/pikachu/csrf截图/PicSnapX20261027195343581.png" alt="CSRF Token 绕过后的结果" loading="lazy">
+            <div class="note">缺陷在于“先校验、后刷新 token”。正确做法应是 token 每次请求后立即刷新且不可预测，并绑定会话。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>防护方法</span><span class="badge">防御建议</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>CSRF Token：</strong>不可预测、一次性、绑定会话，每次请求后刷新。</li>
+              <li><strong>校验 Referer / Origin：</strong>确认请求来自本站页面。</li>
+              <li><strong>敏感操作使用 POST：</strong>避免用 GET 执行有副作用的操作。</li>
+              <li><strong>Cookie 的 SameSite：</strong>设置为 <code>Lax</code> 或 <code>Strict</code>，减少跨站携带。</li>
+              <li><strong>二次验证：</strong>改密、转账等关键操作要求再次输入密码或验证码。</li>
             </ul>
           </div>
         </details>
