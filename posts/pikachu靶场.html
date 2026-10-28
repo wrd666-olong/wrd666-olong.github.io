@@ -418,6 +418,47 @@ set_token();   // 第48行：校验“之后”才生成/刷新 token</code></pr
       </div>
     </details>
 
+    <details class="module">
+      <summary><span>RCE 模块</span><span class="badge">2 题 + 防护</span></summary>
+      <div class="module-body">
+        <p class="module-desc">RCE（Remote Code Execution，远程代码执行 / 命令执行）是指应用把不可信的输入拼接进系统命令或代码中执行，攻击者可借此在服务器上执行任意命令或代码，危害极高。Pikachu 的 RCE 模块包含 exec "ping"（命令注入）和 exec "eval"（代码执行）。</p>
+
+        <details class="topic">
+          <summary><span>1. exec "ping"（命令注入）</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>页面把用户输入当作 ping 的目标地址拼接到系统命令中执行，没有过滤 <code>&amp;</code> <code>|</code> <code>;</code> 等命令连接符，因此可以在正常命令后拼接额外命令。</p>
+            <p><strong>测试：</strong>输入 <code>127.0.0.1 &amp; whoami</code>，先执行 ping，再执行 whoami，返回当前运行 Web 服务的用户。</p>
+            <img src="../drafts/pikachu/rec模块截图/PicSnapX20261027201458727.png" alt="输入 127.0.0.1 & whoami" loading="lazy">
+            <img src="../drafts/pikachu/rec模块截图/InkedPicSnapX20261027201526859.jpg" alt="whoami 执行结果" loading="lazy">
+            <div class="note">Windows 常用 <code>&amp;</code>、<code>&amp;&amp;</code>、<code>|</code>、<code>||</code>；Linux 常用 <code>;</code>、<code>|</code>、<code>&amp;&amp;</code>、<code>$()</code>、反引号。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>2. exec "eval"（代码执行）</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>页面把输入拼接进 PHP 的 <code>eval()</code> 中执行，等价于可以执行任意 PHP 代码。</p>
+            <p><strong>测试：</strong>提交 <code>phpinfo();</code> 查看环境信息，或 <code>system('whoami');</code>、<code>system('ipconfig');</code> 执行系统命令。</p>
+            <img src="../drafts/pikachu/rec模块截图/PicSnapX20261027201745218.png" alt="eval 代码执行" loading="lazy">
+            <div class="note">代码执行比命令注入更直接，可调用语言层面的任意功能。仅限授权靶场练习。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>防护方法</span><span class="badge">防御建议</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>严格校验输入：</strong>使用白名单，例如只允许合法的 IP / 域名格式，拒绝一切多余字符。</li>
+              <li><strong>不拼接系统命令：</strong>必须调用时用 <code>escapeshellarg()</code> / <code>escapeshellcmd()</code> 转义。</li>
+              <li><strong>禁用危险函数：</strong>在 <code>disable_functions</code> 中禁用 <code>system</code>、<code>exec</code>、<code>passthru</code>、<code>shell_exec</code>、<code>popen</code> 等（<code>eval</code> 需靠代码审计 / 安全扩展约束）。</li>
+              <li><strong>最小权限：</strong>Web 服务以低权限账号运行，降低被控后的影响范围。</li>
+              <li><strong>用安全 API 替代：</strong>尽量使用语言/框架提供的安全接口，而不是 shell 或 eval。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </details>
+
   </article>
 </main>
 
