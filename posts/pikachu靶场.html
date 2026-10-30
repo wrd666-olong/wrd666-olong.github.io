@@ -525,6 +525,57 @@ fclose($myfile);
       </div>
     </details>
 
+    <details class="module">
+      <summary><span>文件上传与下载模块</span><span class="badge">3 题 + 防护</span></summary>
+      <div class="module-body">
+        <p class="module-desc">文件上传与下载是 Web 中常见的高危功能点：上传若校验不严可上传脚本 Getshell；下载若用参数直接拼接文件路径，可造成任意文件下载 / 源码泄露。本模块把两者合并整理。（配图为演示示意图）</p>
+
+        <details class="topic">
+          <summary><span>1. 文件上传：客户端校验绕过</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>后端只依赖前端 JS 校验扩展名，攻击者禁用 JS 或直接改包，把 <code>.php</code> 文件上传即可绕过。</p>
+            <p><strong>测试：</strong>选择 <code>shell.php</code> 上传，前端校验被绕过，服务端直接保存到 <code>upload/</code> 目录。</p>
+            <img src="../drafts/pikachu/上传下载截图/upload-client.png" alt="客户端校验绕过" loading="lazy">
+            <div class="note">前端校验不可信，必须在服务端做校验。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>2. 文件上传：MIME / Content-Type 绕过</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>服务端仅校验 <code>Content-Type</code>（MIME）而不校验扩展名 / 内容，抓包把 <code>Content-Type</code> 改成 <code>image/png</code> 即可上传 PHP 文件。</p>
+            <p><strong>测试：</strong>上传 <code>shell.php</code>，用 Burp 拦截把请求中的 <code>Content-Type</code> 改为 <code>image/png</code>，服务端放行。</p>
+            <img src="../drafts/pikachu/上传下载截图/upload-type.png" alt="MIME 绕过" loading="lazy">
+            <div class="note">还有文件头 / <code>getimagesize</code> 校验，可用图片马绕过；配合文件包含即可 Getshell。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>3. 文件下载：任意文件下载</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>下载接口用用户可控的 <code>filename</code> 参数直接拼接路径，未做白名单 / 穿越过滤，可用 <code>../</code> 读取任意文件。</p>
+            <p><strong>测试：</strong>把 filename 换成穿越路径，读取系统文件 <code>win.ini</code>：</p>
+            <div class="code"><pre><code>http://127.0.0.1:8443/pikachu/vul/unsafedownload/execdownload.php?filename=../../../../Windows/win.ini</code></pre></div>
+            <img src="../drafts/pikachu/上传下载截图/download-traversal.png" alt="任意文件下载" loading="lazy">
+            <div class="note">可下载源码、配置、密钥等敏感文件，造成源码 / 信息泄露。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>防护方法</span><span class="badge">防御建议</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>上传白名单：</strong>服务端校验扩展名、MIME、文件头，只允许安全类型；上传后重命名。</li>
+              <li><strong>上传目录禁执行：</strong>关闭 upload 目录的脚本执行权限，限制文件大小。</li>
+              <li><strong>下载白名单：</strong>用固定文件 ID / 白名单映射，不直接使用用户传入的路径。</li>
+              <li><strong>过滤穿越字符：</strong>拦截 <code>../</code>、绝对路径，或用 <code>basename()</code> 只取文件名。</li>
+              <li><strong>最小权限：</strong>敏感文件放在非 Web 目录，Web 服务以低权限运行。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </details>
+
   </article>
 </main>
 
