@@ -576,6 +576,222 @@ fclose($myfile);
       </div>
     </details>
 
+    <details class="module">
+      <summary><span>越权模块</span><span class="badge">2 题 + 防护</span></summary>
+      <div class="module-body">
+        <p class="module-desc">越权（Over Permission）是指用户访问了超出自身权限范围的功能或数据，分为水平越权和垂直越权。核心是服务端没有对“当前用户能否操作该资源”做校验。（配图为演示示意图）</p>
+
+        <details class="topic">
+          <summary><span>1. 水平越权</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>同一权限级别的用户可以访问其他用户的数据。通过修改请求里的身份参数（如 <code>username</code>、<code>id</code>），就能越界查看或修改别人的资料。</p>
+            <p><strong>测试：</strong>把请求中的 <code>username=peter</code> 改成 <code>username=lili</code>，即以 peter 的登录态看到了 lili 的个人信息。</p>
+            <img src="../drafts/pikachu/其他模块截图/overperm.png" alt="水平越权" loading="lazy">
+            <div class="note">服务端必须校验“该资源是否属于当前登录用户”，不能只靠前端传参。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>2. 垂直越权</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>低权限用户访问高权限功能。例如普通用户直接请求管理员接口（增删改用户），如果服务端只在前端隐藏菜单、接口不做权限校验，就会越权成功。</p>
+            <p><strong>测试：</strong>用普通账号登录后，直接访问 / 提交管理员专属的 URL 或接口。</p>
+            <div class="note">前端隐藏按钮不等于安全，接口层必须做角色权限校验。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>防护方法</span><span class="badge">防御建议</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>服务端鉴权：</strong>每个请求都校验当前用户身份与权限，不信任前端传入的角色 / 身份。</li>
+              <li><strong>校验资源归属：</strong>操作数据前确认该记录属于当前用户。</li>
+              <li><strong>基于角色的访问控制：</strong>用 RBAC 统一管理接口权限。</li>
+              <li><strong>最小权限：</strong>账号只授予完成任务所需的最小权限。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="module">
+      <summary><span>目录遍历模块</span><span class="badge">1 题 + 防护</span></summary>
+      <div class="module-body">
+        <p class="module-desc">目录遍历（Directory Traversal，也叫路径穿越）是指程序用用户可控的参数拼接文件路径且未过滤 <code>../</code>，从而可以跳出限定目录、读取服务器上的任意文件。（配图为演示示意图）</p>
+
+        <details class="topic">
+          <summary><span>1. 目录遍历读取任意文件</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>文件读取接口把参数直接拼进路径，使用 <code>../</code> 可以逐级向上跳转，最终读取系统文件或源码。</p>
+            <div class="code"><pre><code>http://127.0.0.1:8443/pikachu/vul/dir/dir_list.php?title=../../../../Windows/win.ini</code></pre></div>
+            <img src="../drafts/pikachu/其他模块截图/traversal.png" alt="目录遍历" loading="lazy">
+            <div class="note">可读取源码、配置、密钥等，常与文件包含组合利用。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>防护方法</span><span class="badge">防御建议</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>白名单：</strong>只允许读取指定目录下的文件。</li>
+              <li><strong>过滤穿越字符：</strong>拦截 <code>../</code>、<code>..\</code>、绝对路径，或用 <code>basename()</code> 只取文件名。</li>
+              <li><strong>规范化路径：</strong>拼接后用 <code>realpath()</code> 校验是否仍在允许目录内。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="module">
+      <summary><span>敏感信息泄露模块</span><span class="badge">1 题 + 防护</span></summary>
+      <div class="module-body">
+        <p class="module-desc">敏感信息泄露是指源码、备份文件、配置文件、注释、报错信息等本不该暴露的内容被外部获取，可能导致账号泄露，或为进一步攻击提供线索。（配图为演示示意图）</p>
+
+        <details class="topic">
+          <summary><span>1. 常见泄露源</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>备份文件：</strong><code>www.zip</code>、<code>config.php.bak</code>、<code>.swp</code> 等可被直接下载。</li>
+              <li><strong>版本控制：</strong>误部署的 <code>.git/</code>、<code>.svn/</code> 可还原源码。</li>
+              <li><strong>调试信息：</strong><code>phpinfo.php</code>、详细报错堆栈暴露路径与配置。</li>
+              <li><strong>前端注释：</strong>HTML / JS 注释里残留测试账号、密钥、内网地址。</li>
+            </ul>
+            <img src="../drafts/pikachu/其他模块截图/infoleak.png" alt="敏感信息泄露" loading="lazy">
+            <div class="note">信息收集阶段，泄露的源码 / 配置往往能直接拿到数据库账号或后台入口。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>防护方法</span><span class="badge">防御建议</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>清理文件：</strong>删除备份、测试、<code>.git</code>、<code>phpinfo</code> 等无用文件。</li>
+              <li><strong>关闭调试：</strong>生产环境关闭详细错误回显。</li>
+              <li><strong>最小暴露：</strong>前端不写入敏感信息，配置文件放在非 Web 目录。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="module">
+      <summary><span>不安全的 URL 跳转模块</span><span class="badge">1 题 + 防护</span></summary>
+      <div class="module-body">
+        <p class="module-desc">不安全的 URL 跳转（Open Redirect）是指跳转目标由用户参数决定且未做校验，攻击者可构造链接让用户在“看起来是本站”的情况下跳转到钓鱼站点。（配图为演示示意图）</p>
+
+        <details class="topic">
+          <summary><span>1. 跳转到任意站点</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>跳转接口直接读取 <code>url</code> 参数并 <code>header("Location: $url")</code>，没有校验目标域名。</p>
+            <div class="code"><pre><code>http://127.0.0.1:8443/pikachu/vul/urlredirect/urlredirect.php?url=http://evil.example/phish</code></pre></div>
+            <img src="../drafts/pikachu/其他模块截图/redirect.png" alt="URL 跳转" loading="lazy">
+            <div class="note">常被用于钓鱼：链接域名是可信站点，跳过去却是恶意页面。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>防护方法</span><span class="badge">防御建议</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>白名单域名：</strong>只允许跳转到预先登记的可信域名。</li>
+              <li><strong>站内相对路径：</strong>尽量只允许站内相对路径跳转。</li>
+              <li><strong>提示确认：</strong>跳转外站时给出明确提示。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="module">
+      <summary><span>SSRF 模块</span><span class="badge">1 题 + 防护</span></summary>
+      <div class="module-body">
+        <p class="module-desc">SSRF（服务端请求伪造，Server-Side Request Forgery）是指攻击者让服务器去请求其指定的 URL，从而访问内网服务、本机端口或云元数据等外部无法直接触达的资源。（配图为演示示意图）</p>
+
+        <details class="topic">
+          <summary><span>1. 探测 / 访问内网</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>接口把用户提供的 URL 作为请求地址（curl / file_get_contents），未限制目标，服务器就成了攻击者的“代理”。</p>
+            <p><strong>常见目标：</strong><code>127.0.0.1</code>、内网段（<code>192.168.x.x</code>、<code>10.x.x.x</code>）、云元数据 <code>169.254.169.254</code>，协议还可尝试 <code>file://</code>、<code>gopher://</code>、<code>dict://</code>。</p>
+            <div class="code"><pre><code>http://127.0.0.1:8443/pikachu/vul/ssrf/ssrf_curl.php?url=http://127.0.0.1:8080/admin</code></pre></div>
+            <img src="../drafts/pikachu/其他模块截图/ssrf.png" alt="SSRF" loading="lazy">
+            <div class="note">SSRF 可进一步读取云服务器凭证、攻击内网服务。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>防护方法</span><span class="badge">防御建议</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>协议 / 域名 / 端口白名单：</strong>只允许访问必要的外部地址。</li>
+              <li><strong>禁止内网地址：</strong>解析后校验 IP，拒绝回环、内网、链路本地地址。</li>
+              <li><strong>防 DNS 重绑定：</strong>解析与请求使用同一 IP，限制重定向。</li>
+              <li><strong>最小权限：</strong>服务端发起请求的账号 / 网络权限最小化。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="module">
+      <summary><span>XXE 模块</span><span class="badge">1 题 + 防护</span></summary>
+      <div class="module-body">
+        <p class="module-desc">XXE（XML 外部实体注入，XML External Entity）是指 XML 解析器允许引用外部实体，攻击者借此读取服务器文件、发起 SSRF 或造成 DoS。（配图为演示示意图）</p>
+
+        <details class="topic">
+          <summary><span>1. 外部实体读取文件</span></summary>
+          <div class="topic-body">
+            <p><strong>payload：</strong>在 XML 中声明外部实体并引用它：</p>
+            <div class="code"><pre><code>&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE foo [&lt;!ENTITY xxe SYSTEM "file:///c:/windows/win.ini"&gt;]&gt;
+&lt;foo&gt;&amp;xxe;&lt;/foo&gt;</code></pre></div>
+            <img src="../drafts/pikachu/其他模块截图/xxe.png" alt="XXE" loading="lazy">
+            <div class="note">把 <code>file://</code> 换成 <code>http://</code> 还能发起 SSRF。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>防护方法</span><span class="badge">防御建议</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>禁用外部实体：</strong>解析时关闭 DTD / 外部实体（如 PHP 的 <code>libxml_disable_entity_loader(true)</code>、Java 禁用外部通用实体）。</li>
+              <li><strong>使用安全解析器：</strong>选择默认禁用 XXE 的库或显式配置。</li>
+              <li><strong>限制输入：</strong>不接收不必要的 XML，优先使用 JSON。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details class="module">
+      <summary><span>反序列化模块</span><span class="badge">1 题 + 防护</span></summary>
+      <div class="module-body">
+        <p class="module-desc">反序列化是指把序列化字符串还原为对象时，攻击者构造恶意数据触发对象的魔术方法（如 <code>__wakeup</code>、<code>__destruct</code>），进而执行危险操作甚至 Getshell。（配图为演示示意图）</p>
+
+        <details class="topic">
+          <summary><span>1. PHP 反序列化</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong><code>unserialize()</code> 处理用户可控数据时，会按字符串内容实例化对象并自动调用魔术方法，可能触发文件写入、命令执行等。</p>
+            <p><strong>示例 payload：</strong></p>
+            <div class="code"><pre><code>O:1:"S":1:{s:4:"test";s:10:"&lt;script&gt;";}</code></pre></div>
+            <img src="../drafts/pikachu/其他模块截图/deserial.png" alt="反序列化" loading="lazy">
+            <div class="note">利用链（POP chain）可以把无害的魔术方法串成完整的命令执行。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>防护方法</span><span class="badge">防御建议</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>不反序列化不可信数据：</strong>优先使用 JSON 等纯数据格式。</li>
+              <li><strong>白名单类：</strong>只允许反序列化预期的类（如 <code>allowed_classes</code>）。</li>
+              <li><strong>签名校验：</strong>对序列化数据做完整性签名。</li>
+              <li><strong>减少魔术方法风险：</strong>不在 <code>__wakeup</code> / <code>__destruct</code> 中执行敏感操作。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </details>
+
   </article>
 </main>
 
