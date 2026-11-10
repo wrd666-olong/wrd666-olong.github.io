@@ -35,10 +35,10 @@
     cursor: pointer; font-size: .95rem; transition: color .2s, border-color .2s, transform .2s;
   }
   .theme-btn:hover { color: var(--accent); border-color: var(--accent); transform: scale(1.08); }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 44px; }
+  .wrap { width: 100%; max-width: 900px; margin: 0 auto; padding: 24px clamp(16px, 3vw, 32px) 48px; }
   .card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-    padding: 28px 26px; box-shadow: var(--shadow);
+    background: transparent; border: none; border-radius: 0;
+    padding: 0; box-shadow: none;
   }
   h1 {
     font-size: 1.7rem; margin-bottom: 8px;
@@ -136,8 +136,7 @@
     font-size: .88rem; color: var(--muted);
   }
   @media (max-width: 480px) {
-    .wrap { padding: 14px 8px 32px; }
-    .card { padding: 18px 13px; border-radius: 12px; }
+    .wrap { padding: 18px 14px 40px; }
     h1 { font-size: 1.35rem; }
     .intro { font-size: .9rem; }
     .module { margin: 10px 0; }
