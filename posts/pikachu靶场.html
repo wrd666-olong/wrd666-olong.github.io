@@ -419,9 +419,62 @@ set_token();   // 第48行：校验“之后”才生成/刷新 token</code></pr
     </details>
 
     <details class="module">
-      <summary><span>SQL 注入模块</span><span class="badge">开发中</span></summary>
+      <summary><span>SQL 注入模块</span><span class="badge">4 题 + 防护</span></summary>
       <div class="module-body">
-        <p class="module-desc">该模块正在整理中，敬请期待。</p>
+        <p class="module-desc">SQL 注入（SQL Injection）是指程序把用户输入拼接进 SQL 语句执行，攻击者可构造输入改变原语句逻辑，从而绕过登录、拖库、读写文件等。Pikachu 的 SQL 注入类型很多，这里挑选几个重点整理。（配图为演示示意图）</p>
+
+        <details class="topic">
+          <summary><span>1. 数字型注入</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>参数是数字并被直接拼进 SQL，如 <code>select * from users where id=$id</code>。输入 <code>1 and 1=1</code> 正常、<code>1 and 1=2</code> 为空，说明可控。</p>
+            <p><strong>测试：</strong>提交 <code>1 and 1=1</code> 返回数据，改成 <code>1 and 1=2</code> 无数据。</p>
+            <img src="../drafts/pikachu/sql注入截图/sql-numeric.png" alt="数字型注入" loading="lazy">
+            <div class="note">数字型不需要引号闭合，直接拼接布尔条件即可。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>2. 字符型注入</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>参数被引号包裹，如 <code>where username='$name'</code>。需要先闭合引号，再构造恒真条件。</p>
+            <p><strong>测试：</strong>输入 <code>1' or '1'='1</code>，条件恒真，返回所有用户。</p>
+            <img src="../drafts/pikachu/sql注入截图/sql-char.png" alt="字符型注入" loading="lazy">
+            <div class="note">字符型注意闭合引号，并用 <code>--+</code> 或 <code>#</code> 注释掉后面的引号。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>3. 布尔盲注</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>页面不直接回显数据，只返回“有结果 / 无结果”。利用真假条件推断数据，如 <code>length(database())&gt;5</code>、<code>substr(database(),1,1)='p'</code>。</p>
+            <p><strong>测试：</strong>提交 <code>id=1 and length(database())&gt;5</code>，有结果说明条件为真。</p>
+            <img src="../drafts/pikachu/sql注入截图/sql-bool.png" alt="布尔盲注" loading="lazy">
+            <div class="note">逐位判断真假，即可爆破出库名、表名、字段和数据。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>4. 时间盲注</span></summary>
+          <div class="topic-body">
+            <p><strong>原理：</strong>页面连真假都不明显时，用 <code>sleep()</code> 让条件成立时延迟，根据响应时间判断。</p>
+            <p><strong>测试：</strong>提交 <code>id=1 and sleep(5)</code>，响应明显变慢（约 5 秒）说明注入成立。</p>
+            <img src="../drafts/pikachu/sql注入截图/sql-time.png" alt="时间盲注" loading="lazy">
+            <div class="note">结合 <code>if(条件, sleep(5), 0)</code> 可按真假逐位推断数据。</div>
+          </div>
+        </details>
+
+        <details class="topic">
+          <summary><span>防护方法</span><span class="badge">防御建议</span></summary>
+          <div class="topic-body">
+            <ul>
+              <li><strong>预编译 / 参数化查询：</strong>使用 PDO / Prepared Statement，把数据与 SQL 分离，这是最有效的方式。</li>
+              <li><strong>输入校验：</strong>对类型、长度、格式做严格校验（如 id 必须是整数）。</li>
+              <li><strong>最小权限：</strong>数据库账号只授予必要权限，关闭 <code>FILE</code> 等危险权限。</li>
+              <li><strong>关闭报错回显：</strong>避免报错注入，错误信息只记录到日志。</li>
+              <li><strong>使用 ORM：</strong>尽量用 ORM 框架，减少手写拼接 SQL。</li>
+            </ul>
+          </div>
+        </details>
       </div>
     </details>
 
